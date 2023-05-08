@@ -295,6 +295,35 @@
 
                 </LinearLayout>
 
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:weightSum="2"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal" >
+
+                    <Button
+                        android:layout_marginTop="4dp"
+                        android:id="@+id/btn_change_booking"
+                        android:layout_marginRight="4dp"
+                        android:text="CHANGE"
+                        android:layout_weight="1"
+                        android:layout_width="0dp"
+                        android:background="@drawable/button_border_bg"
+                        android:layout_height="wrap_content" />
+
+                    <Button
+                        android:layout_marginTop="4dp"
+                        android:id="@+id/btn_delete_booking"
+                        android:layout_marginRight="4dp"
+                        android:text="DELETE"
+                        android:layout_weight="1"
+                        android:layout_width="0dp"
+                        android:background="@drawable/button_border_bg"
+                        android:layout_height="wrap_content" />
+
+
+                </LinearLayout>
+
             </LinearLayout>
 
         </androidx.cardview.widget.CardView>

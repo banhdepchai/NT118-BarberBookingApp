@@ -4,12 +4,15 @@ import android.content.Intent;
 import android.os.Parcelable;
 
 import com.example.androidbarberapp.Model.Barber;
+import com.example.androidbarberapp.Model.BookingInformation;
 import com.example.androidbarberapp.Model.Salon;
 import com.example.androidbarberapp.Model.TimeSlot;
 import com.example.androidbarberapp.Model.User;
+import com.google.firebase.Timestamp;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 
 public class Common {
     public static final String KEY_ENABLE_BUTTON_NEXT = "ENABLE_BUTTON_NEXT";
@@ -22,6 +25,7 @@ public class Common {
     public static final Object DISABLE_TAG = "DISABLE";
     public static final String KEY_TIME_SLOT = "TIME_SLOT";
     public static final String KEY_CONFIRM_BOOKING = "CONFIRM_BOOKING";
+    public static final String EVENT_URI_CACHE = "URI_EVENT_SAVE";
     public static String IS_LOGIN = "IsLogin";
     public static User currentUser;
     public static Salon currentSalon;
@@ -31,6 +35,8 @@ public class Common {
     public static int currentTimeSlot=-1;
     public static Calendar bookingDate = Calendar.getInstance();
     public static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd_MM_yyyy"); // Only use when need format key
+    public static BookingInformation currentBooking;
+    public static String currentBookingId = "";
 
     public static String convertTimeSlotToString(int slot) {
         switch (slot) {
@@ -77,5 +83,11 @@ public class Common {
             default:
                 return "Closed";
         }
+    }
+
+    public static String convertTimeStampToStringKey(Timestamp timestamp) {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd_MM_yyyy");
+        Date date = timestamp.toDate();
+        return simpleDateFormat.format(date);
     }
 }

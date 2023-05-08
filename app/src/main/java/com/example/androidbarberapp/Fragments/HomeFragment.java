@@ -1,6 +1,8 @@
 package com.example.androidbarberapp.Fragments;
 
+import android.app.AlertDialog;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -10,10 +12,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
+import android.text.TextUtils;
 import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -23,6 +27,7 @@ import com.example.androidbarberapp.Adapter.LookbookAdapter;
 import com.example.androidbarberapp.BookingActivity;
 import com.example.androidbarberapp.Common.Common;
 import com.example.androidbarberapp.Interface.IBookingInfoLoadListener;
+import com.example.androidbarberapp.Interface.IBookingInformationChangeListener;
 import com.example.androidbarberapp.Interface.ILookbookLoadListener;
 import com.example.androidbarberapp.Model.Banner;
 import com.example.androidbarberapp.Model.BookingInformation;
@@ -32,6 +37,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -43,13 +49,14 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
+import io.paperdb.Paper;
 
 /**
  * A simple {@link Fragment} subclass.
  * Use the {@link HomeFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class HomeFragment extends Fragment implements IBookingInfoLoadListener {
+public class HomeFragment extends Fragment implements IBookingInfoLoadListener, IBookingInformationChangeListener {
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -76,9 +83,15 @@ public class HomeFragment extends Fragment implements IBookingInfoLoadListener {
     @BindView(R.id.txt_time_remain)
     TextView txt_time_remain;
 
+    @BindView(R.id.btn_delete_booking)
+    Button btn_delete_booking;
+    @BindView(R.id.btn_change_booking)
+    Button btn_change_booking;
+
 
     // Interface
     IBookingInfoLoadListener iBookingInfoLoadListener;
+    IBookingInformationChangeListener iBookingInformationChangeListener;
 
 
 
@@ -130,7 +143,7 @@ public class HomeFragment extends Fragment implements IBookingInfoLoadListener {
                         if (!task.getResult().isEmpty()) {
                             for (QueryDocumentSnapshot queryDocumentSnapshot : task.getResult()) {
                                 BookingInformation bookingInformation = queryDocumentSnapshot.toObject(BookingInformation.class);
-                                iBookingInfoLoadListener.onBookingInfoLoadSuccess(bookingInformation);
+                                iBookingInfoLoadListener.onBookingInfoLoadSuccess(bookingInformation, queryDocumentSnapshot.getId());
                                 break;  // Exit loop as soon as
                             }
                         }
@@ -179,6 +192,7 @@ public class HomeFragment extends Fragment implements IBookingInfoLoadListener {
 
         // Init
         iBookingInfoLoadListener = this;
+        iBookingInformationChangeListener = this;
 
         layout_user_information = (LinearLayout)view.findViewById(R.id.layout_user_information);
         TextView txt_user_name = (TextView)view.findViewById(R.id.txt_user_name);
@@ -210,7 +224,109 @@ public class HomeFragment extends Fragment implements IBookingInfoLoadListener {
             }
         });
 
+        btn_delete_booking.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                deleteBookingFromBarber(false);
+            }
+        });
+
+        btn_change_booking.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                changeBookingFromUser();
+            }
+        });
+
         return view;
+    }
+
+    private void changeBookingFromUser() {
+        // Show dialog confirm
+        AlertDialog.Builder confirmDialog = new AlertDialog.Builder(getActivity())
+                .setCancelable(false)
+                .setTitle("Hey!")
+                .setMessage("Do you want to change your booking information?")
+                .setNegativeButton("CANCEL", (dialog, which) -> dialog.dismiss())
+                .setPositiveButton("CONFIRM", (dialog, which) -> {
+                    deleteBookingFromBarber(true);
+                });
+
+        confirmDialog.show();
+    }
+
+    private void deleteBookingFromBarber(boolean b) {
+        // To delete booking, we need to delete from Barber collection first
+        // After that, delete from User collection
+        // And final, delete event
+
+        // We need load Common.currentBooking because we need some data from BookingInformation
+        if (Common.currentBooking != null) {
+
+            // Get booking information in barber object
+            DocumentReference barberBookingInfo = FirebaseFirestore.getInstance()
+                    .collection("AllSalon")
+                    .document(Common.currentBooking.getCityBook())
+                    .collection("Branch")
+                    .document(Common.currentBooking.getSalonId())
+                    .collection("Barber")
+                    .document(Common.currentBooking.getBarberId())
+                    .collection(Common.convertTimeStampToStringKey(Common.currentBooking.getTimestamp()))
+                    .document(Common.currentBooking.getSlot().toString());
+
+            // When we have document, just delete it
+            barberBookingInfo.delete()
+                    .addOnFailureListener(e -> Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_SHORT).show())
+                    .addOnSuccessListener(aVoid -> {
+                        // After delete on Barber done
+                        // We will start delete from User
+                        deleteBookingFromUser(b);
+                    });
+        }
+        else {
+            Toast.makeText(getContext(), "Current booking must not be null", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void deleteBookingFromUser(boolean b) {
+        // First, we need get information from user object
+        if (!TextUtils.isEmpty(Common.currentBookingId)) {
+            DocumentReference userBookingInfo = FirebaseFirestore.getInstance()
+                    .collection("User")
+                    .document(Common.currentUser.getEmail())
+                    .collection("Booking")
+                    .document(Common.currentBookingId);
+
+            // Delete
+            userBookingInfo.delete()
+                    .addOnFailureListener(e -> Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_SHORT).show())
+                    .addOnSuccessListener(aVoid -> {
+//                        // After delete from "User" we will start delete from Calendar
+//                        // First, we need get save Uri of event we just add
+//                        Paper.init(getActivity());
+//                        if (Paper.book().read(Common.EVENT_URI_CACHE) != null) {
+//                            String eventString = Paper.book().read(Common.EVENT_URI_CACHE).toString();
+//                            Uri eventUri = null;
+//                            if (eventString != null && !TextUtils.isEmpty(eventString)) {
+//                                eventUri = Uri.parse(eventString);
+//                            }
+//                            if (eventUri != null) {
+//                                getActivity().getContentResolver().delete(eventUri, null, null);
+//                            }
+//                        }
+                        Toast.makeText(getContext(), "Success delete booking!", Toast.LENGTH_SHORT).show();
+
+                        loadUserBooking();  // Refresh
+
+                        // Check if isChange
+                        if (b) {
+                            iBookingInformationChangeListener.onBookingInformationChange();
+                        }
+                    });
+        }
+        else {
+            Toast.makeText(getContext(), "Booking information ID must not be empty", Toast.LENGTH_SHORT).show();
+        }
     }
 
 
@@ -221,7 +337,9 @@ public class HomeFragment extends Fragment implements IBookingInfoLoadListener {
     }
 
     @Override
-    public void onBookingInfoLoadSuccess(BookingInformation bookingInformation) {
+    public void onBookingInfoLoadSuccess(BookingInformation bookingInformation, String bookingId) {
+        Common.currentBooking = bookingInformation;
+        Common.currentBookingId = bookingId;
 
         txt_salon_address.setText(bookingInformation.getSalonAddress());
         txt_salon_barber.setText(bookingInformation.getBarberName());
@@ -242,5 +360,11 @@ public class HomeFragment extends Fragment implements IBookingInfoLoadListener {
     @Override
     public void onBookingInfoLoadFailed(String message) {
         Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onBookingInformationChange() {
+        // Here we will just start activity booking
+        startActivity(new Intent(getActivity(), BookingActivity.class));
     }
 }
