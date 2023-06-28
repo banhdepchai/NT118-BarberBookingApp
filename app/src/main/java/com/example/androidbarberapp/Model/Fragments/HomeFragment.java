@@ -1,11 +1,9 @@
-package com.example.androidbarberapp.Fragments;
+package com.example.androidbarberapp.Model.Fragments;
 
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -25,22 +23,22 @@ import android.widget.Toast;
 import com.example.androidbarberapp.Adapter.BannerAdapter;
 import com.example.androidbarberapp.Adapter.LookbookAdapter;
 import com.example.androidbarberapp.BookingActivity;
+import com.example.androidbarberapp.CartActivity;
 import com.example.androidbarberapp.Common.Common;
+import com.example.androidbarberapp.Database.CartDatabase;
+import com.example.androidbarberapp.Database.DatabaseUtils;
 import com.example.androidbarberapp.Interface.IBookingInfoLoadListener;
 import com.example.androidbarberapp.Interface.IBookingInformationChangeListener;
-import com.example.androidbarberapp.Interface.ILookbookLoadListener;
+import com.example.androidbarberapp.Interface.ICountItemInCartListener;
 import com.example.androidbarberapp.Model.Banner;
 import com.example.androidbarberapp.Model.BookingInformation;
-import com.example.androidbarberapp.Model.Lookbook;
 import com.example.androidbarberapp.R;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
+import com.nex3z.notificationbadge.NotificationBadge;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -49,14 +47,13 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
-import io.paperdb.Paper;
 
 /**
  * A simple {@link Fragment} subclass.
  * Use the {@link HomeFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class HomeFragment extends Fragment implements IBookingInfoLoadListener, IBookingInformationChangeListener {
+public class HomeFragment extends Fragment implements IBookingInfoLoadListener, IBookingInformationChangeListener, ICountItemInCartListener {
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -68,9 +65,15 @@ public class HomeFragment extends Fragment implements IBookingInfoLoadListener, 
     private String mParam2;
 
     private Unbinder unbinder;
+
+    CartDatabase cartDatabase;
+
     LinearLayout layout_user_information;
     RecyclerView recycler_services;
     CardView card_view_booking;
+
+    @BindView(R.id.notification_badge)
+    NotificationBadge notificationBadge;
 
     @BindView(R.id.card_booking_info)
     CardView card_booking_info;
@@ -82,11 +85,12 @@ public class HomeFragment extends Fragment implements IBookingInfoLoadListener, 
     TextView txt_time;
     @BindView(R.id.txt_time_remain)
     TextView txt_time_remain;
-
     @BindView(R.id.btn_delete_booking)
     Button btn_delete_booking;
     @BindView(R.id.btn_change_booking)
     Button btn_change_booking;
+    @BindView(R.id.card_view_cart)
+    CardView card_view_cart;
 
 
     // Interface
@@ -114,6 +118,7 @@ public class HomeFragment extends Fragment implements IBookingInfoLoadListener, 
     public void onResume() {
         super.onResume();
         loadUserBooking();
+        countCartItem();
     }
 
     private void loadUserBooking() {
@@ -190,6 +195,8 @@ public class HomeFragment extends Fragment implements IBookingInfoLoadListener, 
         View view = inflater.inflate(R.layout.fragment_home, container, false);
         unbinder = ButterKnife.bind(this, view);
 
+        cartDatabase = CartDatabase.getInstance(getContext());
+
         // Init
         iBookingInfoLoadListener = this;
         iBookingInformationChangeListener = this;
@@ -216,6 +223,8 @@ public class HomeFragment extends Fragment implements IBookingInfoLoadListener, 
 
         loadUserBooking();
 
+        countCartItem();
+
         card_view_booking = (CardView)view.findViewById(R.id.card_view_booking);
         card_view_booking.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -238,7 +247,18 @@ public class HomeFragment extends Fragment implements IBookingInfoLoadListener, 
             }
         });
 
+        card_view_cart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(getActivity(), CartActivity.class));
+            }
+        });
+
         return view;
+    }
+
+    private void countCartItem() {
+        DatabaseUtils.countItemInCart(cartDatabase, this);
     }
 
     private void changeBookingFromUser() {
@@ -366,5 +386,10 @@ public class HomeFragment extends Fragment implements IBookingInfoLoadListener, 
     public void onBookingInformationChange() {
         // Here we will just start activity booking
         startActivity(new Intent(getActivity(), BookingActivity.class));
+    }
+
+    @Override
+    public void onCartItemCountSuccess(int count) {
+        notificationBadge.setText(String.valueOf(count));
     }
 }

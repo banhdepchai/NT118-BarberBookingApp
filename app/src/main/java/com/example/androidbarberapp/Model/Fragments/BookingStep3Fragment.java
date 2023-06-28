@@ -1,4 +1,4 @@
-package com.example.androidbarberapp.Fragments;
+package com.example.androidbarberapp.Model.Fragments;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -8,7 +8,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CalendarView;
 import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;

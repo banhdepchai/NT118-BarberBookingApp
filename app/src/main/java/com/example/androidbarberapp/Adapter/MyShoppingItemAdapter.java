@@ -6,11 +6,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.room.Database;
 
 import com.example.androidbarberapp.Common.Common;
+import com.example.androidbarberapp.Database.CartDatabase;
+import com.example.androidbarberapp.Database.CartItem;
+import com.example.androidbarberapp.Database.DatabaseUtils;
 import com.example.androidbarberapp.Interface.IRecyclerItemSelectedListener;
 import com.example.androidbarberapp.Model.ShoppingItem;
 import com.example.androidbarberapp.R;
@@ -22,15 +27,24 @@ public class MyShoppingItemAdapter extends RecyclerView.Adapter<MyShoppingItemAd
 
     Context context;
     List<ShoppingItem> shoppingItemList;
+    CartDatabase cartDatabase;
 
     public MyShoppingItemAdapter(Context context, List<ShoppingItem> shoppingItemList) {
         this.context = context;
         this.shoppingItemList = shoppingItemList;
+        cartDatabase = CartDatabase.getInstance(context);
     }
 
-    public class MyViewHolder extends RecyclerView.ViewHolder{
+    public class MyViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         TextView txt_shopping_item_name, txt_shopping_item_price, txt_add_to_cart;
         ImageView img_shopping_item;
+
+        IRecyclerItemSelectedListener iRecyclerItemSelectedListener;
+
+        public void setiRecyclerItemSelectedListener(IRecyclerItemSelectedListener iRecyclerItemSelectedListener) {
+            this.iRecyclerItemSelectedListener = iRecyclerItemSelectedListener;
+        }
+
         public MyViewHolder(@NonNull View itemView) {
             super(itemView);
 
@@ -39,6 +53,12 @@ public class MyShoppingItemAdapter extends RecyclerView.Adapter<MyShoppingItemAd
             txt_shopping_item_price = (TextView)itemView.findViewById(R.id.txt_price_shopping_item);
             txt_add_to_cart = (TextView)itemView.findViewById(R.id.txt_add_to_cart);
 
+            txt_add_to_cart.setOnClickListener(this);
+        }
+
+        @Override
+        public void onClick(View view) {
+            iRecyclerItemSelectedListener.onItemSelectedListener(view, getAdapterPosition());
         }
     }
 
@@ -54,6 +74,25 @@ public class MyShoppingItemAdapter extends RecyclerView.Adapter<MyShoppingItemAd
         Picasso.get().load(shoppingItemList.get(position).getImage()).into(holder.img_shopping_item);
         holder.txt_shopping_item_name.setText(Common.formatShoppingItemName(shoppingItemList.get(position).getName()));
         holder.txt_shopping_item_price.setText(new StringBuilder(shoppingItemList.get(position).getPrice().toString()).append(" VNĐ"));
+
+        // Add to cart
+        holder.setiRecyclerItemSelectedListener(new IRecyclerItemSelectedListener() {
+            @Override
+            public void onItemSelectedListener(View view, int pos) {
+                // Create CartItem
+                CartItem cartItem = new CartItem();
+                cartItem.setProductId(shoppingItemList.get(pos).getId());
+                cartItem.setProductName(shoppingItemList.get(pos).getName());
+                cartItem.setProductImage(shoppingItemList.get(pos).getImage());
+                cartItem.setProductQuantity(1);
+                cartItem.setProductPrice(shoppingItemList.get(pos).getPrice());
+                cartItem.setUserEmail(Common.currentUser.getEmail());
+
+                // Insert to DB
+                DatabaseUtils.insertToCart(cartDatabase, cartItem);
+                Toast.makeText(context, "Added to Cart", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override

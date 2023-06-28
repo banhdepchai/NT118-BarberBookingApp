@@ -5,10 +5,10 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 
-import com.example.androidbarberapp.Fragments.BookingStep1Fragment;
-import com.example.androidbarberapp.Fragments.BookingStep2Fragment;
-import com.example.androidbarberapp.Fragments.BookingStep3Fragment;
-import com.example.androidbarberapp.Fragments.BookingStep4Fragment;
+import com.example.androidbarberapp.Model.Fragments.BookingStep1Fragment;
+import com.example.androidbarberapp.Model.Fragments.BookingStep2Fragment;
+import com.example.androidbarberapp.Model.Fragments.BookingStep3Fragment;
+import com.example.androidbarberapp.Model.Fragments.BookingStep4Fragment;
 
 public class MyViewPagerAdapter extends FragmentPagerAdapter {
     public MyViewPagerAdapter(@NonNull FragmentManager fm) {

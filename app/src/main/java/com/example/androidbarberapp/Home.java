@@ -11,8 +11,8 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import com.example.androidbarberapp.Common.Common;
-import com.example.androidbarberapp.Fragments.HomeFragment;
-import com.example.androidbarberapp.Fragments.ShoppingFragment;
+import com.example.androidbarberapp.Model.Fragments.HomeFragment;
+import com.example.androidbarberapp.Model.Fragments.ShoppingFragment;
 import com.example.androidbarberapp.Model.User;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -31,7 +31,6 @@ import com.karumi.dexter.PermissionToken;
 import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 
-import java.util.Collection;
 import java.util.List;
 
 import butterknife.ButterKnife;

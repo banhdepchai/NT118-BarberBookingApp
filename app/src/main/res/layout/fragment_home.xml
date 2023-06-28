@@ -6,7 +6,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:background="@color/homeBackground"
-    tools:context=".Fragments.HomeFragment">
+    tools:context=".Model.Fragments.HomeFragment">
 
     <LinearLayout
         android:id="@+id/layout_user_information"
@@ -95,26 +95,36 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1">
 
-                <LinearLayout
+                <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
+                    <com.nex3z.notificationbadge.NotificationBadge
+                        android:id="@+id/notification_badge"
+                        android:layout_toRightOf="@id/txt_cart_title"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        app:nbMaxTextLength="2"/>
+
                     <ImageView
+                        android:id="@+id/cart_icon"
                         android:layout_width="50dp"
                         android:layout_height="50dp"
-                        android:src="@drawable/ic_shopping"
-                        android:layout_gravity="center_horizontal" />
+                        android:layout_centerHorizontal="true"
+                        android:src="@drawable/ic_shopping" />
 
                     <TextView
+                        android:id="@+id/txt_cart_title"
+                        android:layout_below="@id/cart_icon"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Cart"
                         android:textSize="@dimen/textCardSize"
-                        android:layout_gravity="center_horizontal"
+                        android:layout_centerHorizontal="true"
                         />
 
-                </LinearLayout>
+                </RelativeLayout>
 
             </androidx.cardview.widget.CardView>
 

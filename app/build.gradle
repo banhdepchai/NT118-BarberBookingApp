@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.androidbarberapp"
-        minSdk 29
+        minSdk 28
         targetSdk 33
         versionCode 1
         versionName "1.0"
@@ -54,8 +54,12 @@ dependencies {
     implementation 'com.github.gastricspark:scrolldatepicker:0.0.1'
     implementation 'com.karumi:dexter:6.2.2'
     implementation 'io.github.pilgr:paperdb:2.7.2'
-
     implementation 'com.squareup.picasso:picasso:2.8'
+
+    implementation 'android.arch.persistence.room:runtime:1.1.1'
+    annotationProcessor 'android.arch.persistence.room:compiler:1.1.1'
+    implementation 'com.nex3z:notification-badge:1.0.2'
+
 
 
 

@@ -1,6 +1,5 @@
-package com.example.androidbarberapp.Fragments;
+package com.example.androidbarberapp.Model.Fragments;
 
-import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -9,7 +8,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.CalendarContract;
 import android.view.LayoutInflater;
@@ -23,6 +21,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.example.androidbarberapp.Common.Common;
 import com.example.androidbarberapp.Model.BookingInformation;
+import com.example.androidbarberapp.Model.MyNotification;
 import com.example.androidbarberapp.R;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.CollectionReference;
@@ -36,6 +35,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.UUID;
 
 import javax.annotation.Nullable;
 
@@ -43,7 +43,6 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import butterknife.Unbinder;
-import io.paperdb.Paper;
 
 public class BookingStep4Fragment extends Fragment {
 
@@ -155,11 +154,36 @@ public class BookingStep4Fragment extends Fragment {
                                 .set(bookingInformation)
                                 .addOnSuccessListener(aVoid -> {
 
-//                                    addToCalendar(Common.bookingDate,
-//                                            Common.convertTimeSlotToString(Common.currentTimeSlot));
-                                    resetStaticData();
-                                    getActivity().finish();
-                                    Toast.makeText(getContext(), "Success!", Toast.LENGTH_SHORT).show();
+                                    // Create notification
+                                    MyNotification myNotification = new MyNotification();
+                                    myNotification.setUid(UUID.randomUUID().toString());
+                                    myNotification.setTitle("New Booking");
+                                    myNotification.setContent("You have a new appointment for customer hair care");
+                                    myNotification.setRead(false);
+
+                                    // Submit notification to 'Notifications' collection of Barber
+                                    FirebaseFirestore.getInstance()
+                                            .collection("AllSalon")
+                                            .document(Common.city)
+                                            .collection("Branch")
+                                            .document(Common.currentSalon.getSalonId())
+                                            .collection("Barber")
+                                            .document(Common.currentBarber.getBarberId())
+                                            .collection("Notifications") // If not available, it will be create automatically
+                                            .document(myNotification.getUid()) // Create new document with UID
+                                            .set(myNotification)
+                                            .addOnSuccessListener(aVoid1 -> {
+
+//                                                addToCalendar(Common.bookingDate,
+//                                                Common.convertTimeSlotToString(Common.currentTimeSlot));
+
+                                                resetStaticData();
+                                                getActivity().finish();
+                                                Toast.makeText(getContext(), "Success!", Toast.LENGTH_SHORT).show();
+
+                                            });
+
+
                                 })
                                 .addOnFailureListener(e -> {
                                     Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_SHORT).show();

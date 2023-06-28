@@ -1,4 +1,4 @@
-package com.example.androidbarberapp.Fragments;
+package com.example.androidbarberapp.Model.Fragments;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
