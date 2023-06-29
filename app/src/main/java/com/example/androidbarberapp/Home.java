@@ -36,6 +36,7 @@ import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 import java.util.List;
 
 import butterknife.ButterKnife;
+import io.paperdb.Paper;
 
 public class Home extends AppCompatActivity {
 
@@ -71,15 +72,17 @@ public class Home extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         currentUser = mAuth.getCurrentUser();
 
+        Paper.init(this);
+        Paper.book().write(Common.LOGGED_KEY, currentUser.getEmail());
+
         ButterKnife.bind(Home.this);
 
         FirebaseMessaging.getInstance().getToken()
                 .addOnFailureListener(e -> Toast.makeText(Home.this, ""+e.getMessage(), Toast.LENGTH_SHORT).show())
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        Common.updateToken(task.getResult());
+                        Common.updateToken(getBaseContext(),task.getResult());
                         Log.d("MY_TOKEN", task.getResult());
-
                     }
                 });
 

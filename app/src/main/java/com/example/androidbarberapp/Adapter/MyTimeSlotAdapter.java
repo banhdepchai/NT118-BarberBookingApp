@@ -1,5 +1,6 @@
 package com.example.androidbarberapp.Adapter;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.view.LayoutInflater;
@@ -79,7 +80,7 @@ public class MyTimeSlotAdapter extends RecyclerView.Adapter<MyTimeSlotAdapter.My
     }
 
     @Override
-    public void onBindViewHolder(@NonNull MyTimeSlotAdapter.MyViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull MyTimeSlotAdapter.MyViewHolder holder, @SuppressLint("RecyclerView") int position) {
         holder.txt_time_slot.setText(new StringBuilder(Common.convertTimeSlotToString(position)).toString());
         if(timeSlotList.size() == 0) // If all position is available, just show list
         {

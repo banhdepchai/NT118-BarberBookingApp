@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Parcelable;
+import android.text.TextUtils;
 
 import androidx.core.app.NotificationCompat;
 
@@ -28,6 +29,8 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
+import io.paperdb.Paper;
+
 public class Common {
     public static final String KEY_ENABLE_BUTTON_NEXT = "ENABLE_BUTTON_NEXT";
     public static final String KEY_SALON_STORE = "SALON_SAVE";
@@ -40,6 +43,8 @@ public class Common {
     public static final String KEY_TIME_SLOT = "TIME_SLOT";
     public static final String KEY_CONFIRM_BOOKING = "CONFIRM_BOOKING";
     public static final String EVENT_URI_CACHE = "URI_EVENT_SAVE";
+    public static final String TITLE_KEY = "title";
+    public static final String CONTENT_KEY = "body";
     public static String IS_LOGIN = "IsLogin";
     public static final String LOGGED_KEY = "UserLogged";
     public static User currentUser;
@@ -110,9 +115,9 @@ public class Common {
         return name.length() > 13 ? new StringBuilder(name.substring(0, 10)).append("...").toString() : name;
     }
 
-    public static void updateToken(String token) {
-        String accessToken = FirebaseAuth.getInstance().getCurrentUser().getIdToken(false).getResult().getToken();
-        if(accessToken != null && !accessToken.isEmpty()) {
+    public static void updateToken(Context context, String token) {
+
+        if(Common.currentUser != null) { // Update token for barber app
             MyToken myToken = new MyToken();
             myToken.setToken(token);
             myToken.setTokenType(TOKEN_TYPE.CLIENT); // Because token come from client app
@@ -129,6 +134,32 @@ public class Common {
                         }
                     });
         }
+        else {
+            Paper.init(context);
+            String user = Paper.book().read(Common.LOGGED_KEY);
+            if(user != null)
+            {
+                if (!TextUtils.isEmpty(user))
+                {
+                    MyToken myToken = new MyToken();
+                    myToken.setToken(token);
+                    myToken.setTokenType(TOKEN_TYPE.CLIENT); // Because token come from client app
+                    myToken.setUser(user);
+
+                    // Submit to barber app
+                    FirebaseFirestore.getInstance()
+                            .collection("Tokens")
+                            .document(user)
+                            .set(myToken)
+                            .addOnCompleteListener(task -> {
+                                if(task.isSuccessful()) {
+                                    // Do nothing
+                                }
+                            });
+                }
+            }
+        }
+
     }
 
     public static void showNotification(Context context, int notification_id, String title, String body, Intent intent) {
