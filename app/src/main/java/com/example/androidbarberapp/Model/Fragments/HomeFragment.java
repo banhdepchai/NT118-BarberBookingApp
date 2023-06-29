@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 
+import androidx.annotation.Nullable;
 import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -36,8 +37,12 @@ import com.example.androidbarberapp.R;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.nex3z.notificationbadge.NotificationBadge;
 
 import java.util.ArrayList;
@@ -96,6 +101,9 @@ public class HomeFragment extends Fragment implements IBookingInfoLoadListener, 
     // Interface
     IBookingInfoLoadListener iBookingInfoLoadListener;
     IBookingInformationChangeListener iBookingInformationChangeListener;
+
+    ListenerRegistration userBookingListener = null;
+    com.google.firebase.firestore.EventListener<QuerySnapshot> userBookingEvent = null;
 
 
 
@@ -159,6 +167,16 @@ public class HomeFragment extends Fragment implements IBookingInfoLoadListener, 
                 })
                 .addOnFailureListener(e -> iBookingInfoLoadListener.onBookingInfoLoadFailed(e.getMessage()));
 
+        // Here, after userBooking has been assign data (QuerySnapshot), we will make realtime listen here
+        if (userBookingEvent != null) {
+            if (userBookingListener == null) {
+                userBookingListener = userBooking
+//                        .whereGreaterThanOrEqualTo("timestamp", todayTimeStamp)
+//                        .whereEqualTo("done", false)
+                        .addSnapshotListener(userBookingEvent);
+            }
+        }
+
     }
 
     /**
@@ -189,8 +207,7 @@ public class HomeFragment extends Fragment implements IBookingInfoLoadListener, 
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_home, container, false);
         unbinder = ButterKnife.bind(this, view);
@@ -221,8 +238,8 @@ public class HomeFragment extends Fragment implements IBookingInfoLoadListener, 
 
         viewPager2.setAdapter(new BannerAdapter(banners, viewPager2));
 
+        initRealtimeUserBooking();
         loadUserBooking();
-
         countCartItem();
 
         card_view_booking = (CardView)view.findViewById(R.id.card_view_booking);
@@ -255,6 +272,22 @@ public class HomeFragment extends Fragment implements IBookingInfoLoadListener, 
         });
 
         return view;
+    }
+
+    private void initRealtimeUserBooking() {
+
+        if(userBookingEvent == null)
+        {
+            userBookingEvent = new EventListener<QuerySnapshot>() {
+                @Override
+                public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+
+                    // If have any new booking, update
+                    loadUserBooking();
+                }
+            };
+        }
+
     }
 
     private void countCartItem() {
@@ -391,5 +424,12 @@ public class HomeFragment extends Fragment implements IBookingInfoLoadListener, 
     @Override
     public void onCartItemCountSuccess(int count) {
         notificationBadge.setText(String.valueOf(count));
+    }
+
+    @Override
+    public void onDestroy() {
+        if(userBookingListener != null)
+            userBookingListener.remove();
+        super.onDestroy();
     }
 }

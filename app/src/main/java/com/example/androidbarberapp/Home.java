@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -25,6 +26,7 @@ import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.MultiplePermissionsReport;
 import com.karumi.dexter.PermissionToken;
@@ -70,6 +72,16 @@ public class Home extends AppCompatActivity {
         currentUser = mAuth.getCurrentUser();
 
         ButterKnife.bind(Home.this);
+
+        FirebaseMessaging.getInstance().getToken()
+                .addOnFailureListener(e -> Toast.makeText(Home.this, ""+e.getMessage(), Toast.LENGTH_SHORT).show())
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Common.updateToken(task.getResult());
+                        Log.d("MY_TOKEN", task.getResult());
+
+                    }
+                });
 
         // Init userRef
         String email = String.valueOf(currentUser.getEmail());

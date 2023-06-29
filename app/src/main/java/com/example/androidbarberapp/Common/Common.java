@@ -1,14 +1,28 @@
 package com.example.androidbarberapp.Common;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Parcelable;
+
+import androidx.core.app.NotificationCompat;
 
 import com.example.androidbarberapp.Model.Barber;
 import com.example.androidbarberapp.Model.BookingInformation;
+import com.example.androidbarberapp.Model.MyToken;
 import com.example.androidbarberapp.Model.Salon;
 import com.example.androidbarberapp.Model.TimeSlot;
 import com.example.androidbarberapp.Model.User;
+import com.example.androidbarberapp.R;
+import com.example.androidbarberapp.Services.MyFCMService;
 import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -27,6 +41,7 @@ public class Common {
     public static final String KEY_CONFIRM_BOOKING = "CONFIRM_BOOKING";
     public static final String EVENT_URI_CACHE = "URI_EVENT_SAVE";
     public static String IS_LOGIN = "IsLogin";
+    public static final String LOGGED_KEY = "UserLogged";
     public static User currentUser;
     public static Salon currentSalon;
     public static int step = 0; // Init first step is 0
@@ -93,5 +108,63 @@ public class Common {
 
     public static String formatShoppingItemName(String name) {
         return name.length() > 13 ? new StringBuilder(name.substring(0, 10)).append("...").toString() : name;
+    }
+
+    public static void updateToken(String token) {
+        String accessToken = FirebaseAuth.getInstance().getCurrentUser().getIdToken(false).getResult().getToken();
+        if(accessToken != null && !accessToken.isEmpty()) {
+            MyToken myToken = new MyToken();
+            myToken.setToken(token);
+            myToken.setTokenType(TOKEN_TYPE.CLIENT); // Because token come from client app
+            myToken.setUser(FirebaseAuth.getInstance().getCurrentUser().getEmail());
+
+            // Submit to barber app
+            FirebaseFirestore.getInstance()
+                    .collection("Tokens")
+                    .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
+                    .set(myToken)
+                    .addOnCompleteListener(task -> {
+                        if(task.isSuccessful()) {
+                            // Do nothing
+                        }
+                    });
+        }
+    }
+
+    public static void showNotification(Context context, int notification_id, String title, String body, Intent intent) {
+        PendingIntent pendingIntent = null;
+        if (intent != null)
+            pendingIntent = PendingIntent.getActivity(context, notification_id, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, "Barber_App_Staff");
+
+        builder.setSmallIcon(R.drawable.ic_launcher_background)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setPriority(NotificationCompat.PRIORITY_MAX);
+
+//        NotificationCompat.BigTextStyle bigTextStyle = new NotificationCompat.BigTextStyle();
+//        bigTextStyle.bigText(title);
+//        bigTextStyle.setBigContentTitle(title);
+//        bigTextStyle.setSummaryText("title");
+//
+//        builder.setStyle(bigTextStyle);
+
+        NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            String channelId = "barber.app.client.channel.id";
+            NotificationChannel channel = new NotificationChannel(channelId, "Barber App Channel", NotificationManager.IMPORTANCE_HIGH);
+            manager.createNotificationChannel(channel);
+            builder.setChannelId(channelId);
+        }
+
+        Notification notification = builder.build();
+
+        manager.notify(notification_id, notification);
+    }
+
+    public enum TOKEN_TYPE {
+        CLIENT,
+        BARBER,
+        MANAGER
     }
 }

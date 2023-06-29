@@ -4,6 +4,7 @@ public class MyNotification {
     private String uid, title, content;
     private boolean read;
 
+
     public MyNotification() {
     }
 
