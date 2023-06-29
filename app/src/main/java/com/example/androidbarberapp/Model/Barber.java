@@ -7,12 +7,13 @@ import androidx.annotation.NonNull;
 
 public class Barber implements Parcelable {
     private String name, username, password, barberId;
-    private Long rating;
+    private Double rating;
+    private long ratingTimes;
 
     public Barber() {
     }
 
-    public Barber(String name, String username, String password, Long rating) {
+    public Barber(String name, String username, String password, Double rating) {
         this.name = name;
         this.username = username;
         this.password = password;
@@ -27,7 +28,8 @@ public class Barber implements Parcelable {
         if (in.readByte() == 0) {
             rating = null;
         } else {
-            rating = in.readLong();
+            rating = in.readDouble();
+            ratingTimes = in.readLong();
         }
     }
 
@@ -67,12 +69,20 @@ public class Barber implements Parcelable {
         this.password = password;
     }
 
-    public Long getRating() {
+    public Double getRating() {
         return rating;
     }
 
-    public void setRating(Long rating) {
+    public void setRating(Double rating) {
         this.rating = rating;
+    }
+
+    public long getRatingTimes() {
+        return ratingTimes;
+    }
+
+    public void setRatingTimes(long ratingTimes) {
+        this.ratingTimes = ratingTimes;
     }
 
     public String getBarberId() {
@@ -98,7 +108,8 @@ public class Barber implements Parcelable {
             parcel.writeByte((byte) 0);
         } else {
             parcel.writeByte((byte) 1);
-            parcel.writeLong(rating);
+            parcel.writeDouble(rating);
+            parcel.writeLong(ratingTimes);
         }
     }
 }

@@ -45,6 +45,9 @@ public class MyFCMService extends FirebaseMessagingService {
         if(remoteMessage.getData() != null) {
             if(remoteMessage.getData().get("update_done") != null) {
                 updateLastBooking();
+                Map<String, String> dataReceived = remoteMessage.getData();
+                Paper.init(this);
+                Paper.book().write(Common.RATING_INFORMATION_KEY, new Gson().toJson(dataReceived));
             }
 
             if(remoteMessage.getData().get(Common.TITLE_KEY) != null && remoteMessage.getData().get(Common.CONTENT_KEY) != null) {

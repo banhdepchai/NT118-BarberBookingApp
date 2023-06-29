@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -20,6 +21,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.common.reflect.TypeToken;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
@@ -27,6 +29,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.gson.Gson;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.MultiplePermissionsReport;
 import com.karumi.dexter.PermissionToken;
@@ -34,6 +37,7 @@ import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 
 import java.util.List;
+import java.util.Map;
 
 import butterknife.ButterKnife;
 import io.paperdb.Paper;
@@ -45,6 +49,30 @@ public class Home extends AppCompatActivity {
     CollectionReference userRef;
     FirebaseUser currentUser;
     FirebaseAuth mAuth;
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // Check rating dialog
+        checkRatingDialog();
+    }
+
+    private void checkRatingDialog() {
+        Paper.init(this);
+        String dataSerialized = Paper.book().read(Common.RATING_INFORMATION_KEY, "");
+        if(!TextUtils.isEmpty(dataSerialized)) {
+            Map<String, String> dataReceived = new Gson().fromJson(dataSerialized, new TypeToken<Map<String, String>>(){}.getType());
+            if(dataReceived != null) {
+                Common.showRatingDialog(this,
+                        dataReceived.get(Common.RATING_STATE_KEY),
+                        dataReceived.get(Common.RATING_SALON_ID),
+                        dataReceived.get(Common.RATING_SALON_NAME),
+                        dataReceived.get(Common.RATING_BARBER_ID)
+                );
+            }
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,6 +130,7 @@ public class Home extends AppCompatActivity {
                         Common.currentUser = userSnapShot.toObject(User.class);
                         bottomNavigationView.setSelectedItemId(R.id.action_home);
                     }
+                    checkRatingDialog();
                 }
             }
         });
@@ -172,6 +201,8 @@ public class Home extends AppCompatActivity {
         bottomSheetDialog.setContentView(sheetView);
         bottomSheetDialog.show();
     }
+
+
 
 
 }

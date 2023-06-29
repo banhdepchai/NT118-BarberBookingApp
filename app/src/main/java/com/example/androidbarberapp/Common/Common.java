@@ -1,5 +1,6 @@
 package com.example.androidbarberapp.Common;
 
+import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -9,9 +10,17 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Parcelable;
 import android.text.TextUtils;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.RatingBar;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.widget.AppCompatRatingBar;
 import androidx.core.app.NotificationCompat;
 
+import com.example.androidbarberapp.Home;
 import com.example.androidbarberapp.Model.Barber;
 import com.example.androidbarberapp.Model.BookingInformation;
 import com.example.androidbarberapp.Model.MyToken;
@@ -20,14 +29,20 @@ import com.example.androidbarberapp.Model.TimeSlot;
 import com.example.androidbarberapp.Model.User;
 import com.example.androidbarberapp.R;
 import com.example.androidbarberapp.Services.MyFCMService;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import io.paperdb.Paper;
 
@@ -45,6 +60,11 @@ public class Common {
     public static final String EVENT_URI_CACHE = "URI_EVENT_SAVE";
     public static final String TITLE_KEY = "title";
     public static final String CONTENT_KEY = "body";
+    public static final String RATING_INFORMATION_KEY = "RATING_INFORMATION";
+    public static final String RATING_STATE_KEY = "RATING_STATE";
+    public static final String RATING_SALON_ID = "RATING_SALON_ID";
+    public static final String RATING_SALON_NAME = "RATING_SALON_NAME";
+    public static final String RATING_BARBER_ID = "RATING_BARBER_ID";
     public static String IS_LOGIN = "IsLogin";
     public static final String LOGGED_KEY = "UserLogged";
     public static User currentUser;
@@ -191,6 +211,85 @@ public class Common {
         Notification notification = builder.build();
 
         manager.notify(notification_id, notification);
+    }
+
+    public static void showRatingDialog(Context context, String stateName, String salonId, String salonName, String barberId) {
+        // First, we need get DocumentReference of Barber
+        DocumentReference barberNeedRateRef = FirebaseFirestore.getInstance()
+                .collection("AllSalon")
+                .document(stateName)
+                .collection("Branch")
+                .document(salonId)
+                .collection("Barber")
+                .document(barberId);
+
+        barberNeedRateRef.get()
+                .addOnFailureListener(e -> Toast.makeText(context, ""+e.getMessage(), Toast.LENGTH_SHORT).show())
+                .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                        if(task.isSuccessful())
+                        {
+                            Barber barberRate = task.getResult().toObject(Barber.class);
+                            barberRate.setBarberId(task.getResult().getId());
+
+                            // Create view for dialog
+                            View view = LayoutInflater.from(context)
+                                    .inflate(R.layout.layout_rating_dialog, null);
+
+                            // Widget
+                            TextView txt_salon_name = (TextView)view.findViewById(R.id.txt_salon_name);
+                            TextView txt_barber_name = (TextView)view.findViewById(R.id.txt_barber_name);
+                            AppCompatRatingBar ratingBar = (AppCompatRatingBar)view.findViewById(R.id.rating);
+
+                            // Set info
+                            txt_barber_name.setText(barberRate.getName());
+                            txt_salon_name.setText(salonName);
+
+                            // Create Dialog
+                            AlertDialog.Builder builder = new AlertDialog.Builder(context)
+                                    .setView(view)
+                                    .setCancelable(false)
+                                    .setNegativeButton("SKIP", (dialogInterface, i) -> {
+                                        dialogInterface.dismiss();
+                                    })
+                                    .setPositiveButton("OK", (dialogInterface, i) -> {
+                                        // If select OK, we will update rating information to FireStore
+                                        Double original_rating = barberRate.getRating();
+                                        Long ratingTimes = barberRate.getRatingTimes();
+                                        float userRating = ratingBar.getRating();
+
+                                        Double finalRating = (original_rating + userRating);
+
+                                        // Update barber
+                                        Map<String, Object> data_update = new HashMap<>();
+                                        data_update.put("rating", finalRating);
+                                        data_update.put("ratingTimes", ++ratingTimes);
+
+                                        barberNeedRateRef.update(data_update)
+                                                .addOnFailureListener(e -> Toast.makeText(context, ""+e.getMessage(), Toast.LENGTH_SHORT).show())
+                                                .addOnCompleteListener(task1 -> {
+                                                    if(task1.isSuccessful())
+                                                    {
+                                                        Toast.makeText(context, "Thank you for rating!", Toast.LENGTH_SHORT).show();
+                                                        // Remove key
+                                                        Paper.init(context);
+                                                        Paper.book().delete(Common.RATING_INFORMATION_KEY);
+                                                    }
+                                                });
+                                    })
+                                    .setNeutralButton("NEVER", (dialogInterface, i) -> {
+                                        // If select NEVER, we will update rating information to FireStore
+                                        Paper.init(context);
+                                        Paper.book().delete(Common.RATING_INFORMATION_KEY);
+                                    });
+                            AlertDialog dialog = builder.create();
+                            dialog.show();
+
+                        }
+                    }
+                });
+
     }
 
     public enum TOKEN_TYPE {
