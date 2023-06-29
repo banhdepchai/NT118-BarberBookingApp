@@ -9,9 +9,16 @@ import com.example.androidbarberapp.Interface.ICartItemLoadListener;
 import com.example.androidbarberapp.Interface.ICountItemInCartListener;
 import com.example.androidbarberapp.Interface.ISumCartListener;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.util.List;
 
 public class DatabaseUtils {
+
+    public static void clearCart(CartDatabase db) {
+        ClearCartAsync task = new ClearCartAsync(db);
+        task.execute();
+    }
 
     public static void sumCart(CartDatabase db, ISumCartListener iSumCartListener) {
         SumCartAsync task = new SumCartAsync(db, iSumCartListener);
@@ -36,6 +43,11 @@ public class DatabaseUtils {
     public static void countItemInCart(CartDatabase db, ICountItemInCartListener iCountItemInCartListener) {
         CountItemInCartAsync task = new CountItemInCartAsync(db, iCountItemInCartListener);
         task.execute();
+    }
+
+    public static void deleteCart(@NonNull final CartDatabase db, CartItem cartItem) {
+        DeleteCartAsync task = new DeleteCartAsync(db);
+        task.execute(cartItem);
     }
 
     /*
@@ -147,6 +159,38 @@ public class DatabaseUtils {
 
         private int countItemInCartRun(CartDatabase db) {
             return db.cartDAO().countItemInCart(Common.currentUser.getEmail());
+        }
+    }
+
+    private static class DeleteCartAsync extends AsyncTask<CartItem, Void, Void> {
+        private final CartDatabase db;
+
+        public DeleteCartAsync(CartDatabase db) {
+            this.db = db;
+        }
+
+        @Override
+        protected Void doInBackground(CartItem... cartItems) {
+            db.cartDAO().delete(cartItems[0]);
+            return null;
+        }
+    }
+
+    private static class ClearCartAsync extends AsyncTask<Void, Void, Void> {
+        private final CartDatabase db;
+
+        public ClearCartAsync(CartDatabase db) {
+            this.db = db;
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            clearAllItemFromCart(db);
+            return null;
+        }
+
+        private void clearAllItemFromCart(CartDatabase db) {
+            db.cartDAO().clearCart(Common.currentUser.getEmail());
         }
     }
 }

@@ -1,6 +1,6 @@
 package com.example.androidbarberapp.Model.Fragments;
 
-import android.content.BroadcastReceiver;
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -11,14 +11,16 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.androidbarberapp.Adapter.MyBarberAdapter;
 import com.example.androidbarberapp.Adapter.MyTimeSlotAdapter;
 import com.example.androidbarberapp.Common.Common;
 import com.example.androidbarberapp.Common.SpacesItemDecoration;
 import com.example.androidbarberapp.Interface.ITimeSlotLoadListener;
+import com.example.androidbarberapp.Model.EventBus.BarberDoneEvent;
+import com.example.androidbarberapp.Model.EventBus.DisplayTimeSlotEvent;
 import com.example.androidbarberapp.Model.TimeSlot;
 import com.example.androidbarberapp.R;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -33,6 +35,9 @@ import com.harrywhewell.scrolldatepicker.DayScrollDatePicker;
 import com.harrywhewell.scrolldatepicker.OnDateSelectedListener;
 
 import org.checkerframework.checker.nullness.qual.NonNull;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -52,7 +57,6 @@ public class BookingStep3Fragment extends Fragment implements ITimeSlotLoadListe
     ITimeSlotLoadListener iTimeSlotLoadListener;
 
     Unbinder unbinder;
-    LocalBroadcastManager localBroadcastManager;
 //    Calendar selected_date;
 
     @BindView(R.id.recycler_time_slot)
@@ -61,15 +65,36 @@ public class BookingStep3Fragment extends Fragment implements ITimeSlotLoadListe
     DayScrollDatePicker dayScrollDatePicker;
     SimpleDateFormat simpleDateFormat;
 
-    BroadcastReceiver displayTimeSlot = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
+    //==============================================================================================================================
+    // EVENT BUS
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        EventBus.getDefault().register(this);
+    }
+
+    @Override
+    public void onStop() {
+        EventBus.getDefault().unregister(this);
+        super.onStop();
+    }
+
+    @Subscribe(sticky=true, threadMode = ThreadMode.MAIN)
+    public void loadAllTimeSlotAvailable(DisplayTimeSlotEvent event)
+    {
+        if(event.isDisplay())
+        {
+            // In booking activity, we have pass date with format dd_MM_yyyy (01_03_2019)
             Calendar date = Calendar.getInstance();
             date.add(Calendar.DATE, 0); // Add current date
             loadAvailableTimeSlotOfBarber(Common.currentBarber.getBarberId(),
                     simpleDateFormat.format(date.getTime()));
         }
-    };
+    }
+
+    //==============================================================================================================================
+
 
     private void loadAvailableTimeSlotOfBarber(String barberId, String bookDate) {
         barberDoc = FirebaseFirestore.getInstance()
@@ -137,20 +162,11 @@ public class BookingStep3Fragment extends Fragment implements ITimeSlotLoadListe
 
         iTimeSlotLoadListener = this;
 
-        localBroadcastManager = LocalBroadcastManager.getInstance(getContext());
-        localBroadcastManager.registerReceiver(displayTimeSlot, new IntentFilter(Common.KEY_DISPLAY_TIME_SLOT));
-
         simpleDateFormat = new SimpleDateFormat("dd_MM_yyyy"); // 28_03_2019 (this is key)
 
 //        selected_date = Calendar.getInstance();
 //        selected_date.add(Calendar.DATE, 0); // Init current date
 
-    }
-
-    @Override
-    public void onDestroy() {
-        localBroadcastManager.unregisterReceiver(displayTimeSlot);
-        super.onDestroy();
     }
 
     @Nullable

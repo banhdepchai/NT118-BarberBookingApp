@@ -9,13 +9,15 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.androidbarberapp.Common.Common;
 import com.example.androidbarberapp.Interface.IRecyclerItemSelectedListener;
+import com.example.androidbarberapp.Model.EventBus.EnableNextButton;
 import com.example.androidbarberapp.Model.Salon;
 import com.example.androidbarberapp.R;
+
+import org.greenrobot.eventbus.EventBus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,13 +26,11 @@ public class MySalonAdapter extends RecyclerView.Adapter<MySalonAdapter.MyViewHo
     Context context;
     List<Salon> salonList;
     List<CardView> cardViewList;
-    LocalBroadcastManager localBroadcastManager;
 
     public MySalonAdapter(Context context, List<Salon> salonList) {
         this.context = context;
         this.salonList = salonList;
         cardViewList = new ArrayList<>();
-        localBroadcastManager = LocalBroadcastManager.getInstance(context);
     }
 
     public class MyViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
@@ -87,11 +87,8 @@ public class MySalonAdapter extends RecyclerView.Adapter<MySalonAdapter.MyViewHo
                 holder.card_salon.setCardBackgroundColor(context.getResources()
                         .getColor(android.R.color.holo_orange_dark));
 
-                // Send Broadcast to tell Booking Activity enable button next
-                Intent intent = new Intent(Common.KEY_ENABLE_BUTTON_NEXT);
-                intent.putExtra(Common.KEY_SALON_STORE, salonList.get(pos));
-                intent.putExtra(Common.KEY_STEP, 1);
-                localBroadcastManager.sendBroadcast(intent);
+                // Event Bus
+                EventBus.getDefault().postSticky(new EnableNextButton(1, salonList.get(pos)));
 
             }
         });

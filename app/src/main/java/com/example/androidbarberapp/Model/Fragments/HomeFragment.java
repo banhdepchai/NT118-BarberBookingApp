@@ -29,6 +29,7 @@ import com.example.androidbarberapp.CartActivity;
 import com.example.androidbarberapp.Common.Common;
 import com.example.androidbarberapp.Database.CartDatabase;
 import com.example.androidbarberapp.Database.DatabaseUtils;
+import com.example.androidbarberapp.HistoryActivity;
 import com.example.androidbarberapp.Interface.IBookingInfoLoadListener;
 import com.example.androidbarberapp.Interface.IBookingInformationChangeListener;
 import com.example.androidbarberapp.Interface.ICountItemInCartListener;
@@ -52,6 +53,7 @@ import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 import butterknife.Unbinder;
 import io.paperdb.Paper;
 
@@ -98,6 +100,11 @@ public class HomeFragment extends Fragment implements IBookingInfoLoadListener, 
     Button btn_change_booking;
     @BindView(R.id.card_view_cart)
     CardView card_view_cart;
+
+    @OnClick(R.id.card_view_history)
+    void openHistoryActivity() {
+        startActivity(new Intent(getActivity(), HistoryActivity.class));
+    }
 
 
     // Interface
